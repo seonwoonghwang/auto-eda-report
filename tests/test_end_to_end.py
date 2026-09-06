@@ -136,6 +136,32 @@ def test_classification_pipeline(out_dir: Path) -> None:
     check("보고서 파일 생성", result.report_path is not None and result.report_path.exists())
 
 
+def test_card_churn_pipeline(out_dir: Path) -> None:
+    print("\n[4-1] 카드사 고객 이탈 분류 파이프라인")
+    path = SAMPLES / "sample_card_customer_churn.csv"
+    if not path.exists():
+        check("샘플 파일 존재", False, str(path))
+        return
+
+    config = AnalysisConfig(
+        target="해지여부", analysis_type="auto", cv_folds=3, max_models=5,
+        exclude_columns=["고객번호"], report_title="카드 이탈 검증 보고서",
+    )
+    result = run_from_file(path, config, output_dir=out_dir)
+
+    check("분류로 판정", result.task_type == "classification")
+    check("모델 생성", result.modeling is not None)
+    if result.modeling:
+        acc = result.modeling.holdout_metrics.get("정확도", 0)
+        auc = result.modeling.holdout_metrics.get("ROC-AUC", 0)
+        check("정확도 > 0.6", acc > 0.6, f"정확도={acc:.3f}")
+        check("ROC-AUC > 0.6 (임의 예측보다 우수)", auc > 0.6, f"ROC-AUC={auc:.3f}")
+        check("혼동 행렬 생성", result.modeling.confusion is not None)
+        check("클래스 라벨 보존", result.modeling.class_labels == ["유지", "해지"])
+        check("변수 중요도 산출", not result.modeling.feature_importance.empty)
+    check("보고서 파일 생성", result.report_path is not None and result.report_path.exists())
+
+
 def test_eda_only(out_dir: Path) -> None:
     print("\n[5] 목표 변수 없는 EDA")
     df = pd.read_csv(SAMPLES / "sample_sales_regression.csv")
@@ -259,6 +285,7 @@ def main() -> int:
         test_task_detection()
         test_regression_pipeline(out_dir)
         test_classification_pipeline(out_dir)
+        test_card_churn_pipeline(out_dir)
         test_eda_only(out_dir)
         test_edge_cases(out_dir)
         test_io_formats(out_dir)

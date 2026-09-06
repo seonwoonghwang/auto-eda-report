@@ -169,15 +169,29 @@ with col_upload:
 
 with col_sample:
     sample_dir = Path(__file__).resolve().parent / "samples"
-    sample_files = sorted(sample_dir.glob("*.csv")) if sample_dir.exists() else []
-    if sample_files and st.button("샘플 데이터로 체험", use_container_width=True):
-        loaded = load_dataframe(sample_files[0])
-        st.session_state.df = loaded.df
-        st.session_state.load_result = loaded
-        st.session_state.profile = profile_dataframe(loaded.df)
-        st.session_state.type_overrides = {}
-        reset_analysis()
-        st.rerun()
+    sample_meta = [
+        ("sample_quality_classification.csv", "🏭 제조 품질 판정 (분류)"),
+        ("sample_sales_regression.csv", "🏬 지점 매출 예측 (회귀)"),
+        ("sample_card_customer_churn.csv", "💳 카드사 고객 이탈 (분류)"),
+    ]
+    available_samples = [
+        (sample_dir / name, label) for name, label in sample_meta if (sample_dir / name).exists()
+    ]
+    if available_samples:
+        chosen_label = st.selectbox(
+            "샘플 데이터 선택",
+            [label for _, label in available_samples],
+            label_visibility="collapsed",
+        )
+        chosen_path = next(path for path, label in available_samples if label == chosen_label)
+        if st.button("샘플 데이터로 체험", use_container_width=True):
+            loaded = load_dataframe(chosen_path)
+            st.session_state.df = loaded.df
+            st.session_state.load_result = loaded
+            st.session_state.profile = profile_dataframe(loaded.df)
+            st.session_state.type_overrides = {}
+            reset_analysis()
+            st.rerun()
 
 if uploaded is not None:
     try:
