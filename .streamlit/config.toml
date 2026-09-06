@@ -1,0 +1,15 @@
+[theme]
+primaryColor = "#1C5CAB"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F6FC"
+textColor = "#0B0B0B"
+
+[server]
+# 업로드 가능한 최대 파일 크기(MB).
+# Streamlit Community Cloud 는 앱당 메모리가 최대 2.7GB 이므로 200MB 로 제한합니다.
+# 사내 서버처럼 메모리가 넉넉한 환경에서는 늘려도 됩니다.
+maxUploadSize = 200
+headless = true
+
+[browser]
+gatherUsageStats = false

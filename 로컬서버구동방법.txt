@@ -1,0 +1,28 @@
+cd C:\Users\snscu\projects\auto_eda_report
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m streamlit run app.py
+
+
+cd C:\Users\snscu\projects\auto_eda_report
+.venv\Scripts\python.exe -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501
+
+
+그다음 Windows 방화벽에서 8501 인바운드를 열고, 동료는 http://<그 PC의 사내 IP>:8501 로 접속합니다. 
+PC를 켜 둬야 하는 게 유일한 부담인데, Windows 서비스로 등록하면 재부팅 후에도 자동 실행됩니다.
+
+
+#깃허브에 올리는 방법
+
+git config --global user.name "seonwoonghwang"
+git config --global user.email "seonwoong.hwang@gmail.com"
+
+cd C:\Users\snscu\projects\auto_eda_report
+
+git init
+git add README.md
+git commit -m "데이터 분석 자동화 도구 최초 배포"
+git branch -M main
+git remote set-url origin https://github.com/seonwoonghwang/auto-eda-report.git
+git remote -v
+git push -u origin main
