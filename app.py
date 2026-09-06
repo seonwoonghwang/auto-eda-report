@@ -46,7 +46,9 @@ st.set_page_config(
     page_title="데이터 분석 자동화 도구",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    # "auto": 화면이 넓으면 사이드바를 펼치고, 휴대폰처럼 좁은 화면에서는
+    # 자동으로 접어 본문을 가리지 않게 한다.
+    initial_sidebar_state="auto",
 )
 
 CUSTOM_CSS = """
@@ -59,6 +61,31 @@ CUSTOM_CSS = """
       padding:2px 11px; font-size:0.78rem; font-weight:600; margin-right:8px;
   }
   .hint { color:#52514E; font-size:0.86rem; }
+
+  /* 버튼 공통 스타일 — 어느 화면에서도 손가락으로 누르기 좋은 크기와 통일된 모양 */
+  .stButton > button, .stDownloadButton > button {
+      min-height: 2.75rem;
+      border-radius: 10px;
+      font-weight: 600;
+      white-space: normal;
+      line-height: 1.25;
+  }
+  .stButton > button:active, .stDownloadButton > button:active { transform: scale(0.99); }
+
+  /* STEP1 카드 — 업로드/샘플 영역을 같은 톤·간격으로 정렬 */
+  .panel-title { font-size: 0.92rem; font-weight: 600; color: #33333A; margin-bottom: 0.55rem; }
+  div[data-testid="stVerticalBlockBorderWrapper"] { border-radius: 14px !important; }
+
+  /* 모바일(가로 폭 640px 이하) 대응 */
+  @media (max-width: 640px) {
+      .block-container { padding-top: 1.3rem; padding-left: 0.85rem; padding-right: 0.85rem; }
+      h1 { font-size: 1.45rem !important; }
+      div[data-testid="stMetricValue"] { font-size: 1.08rem; }
+      div[data-testid="stMetricLabel"] { font-size: 0.78rem; }
+      .step-badge { font-size: 0.72rem; padding: 2px 9px; }
+      .stButton > button, .stDownloadButton > button { font-size: 0.9rem; padding: 0.5rem 0.8rem; }
+      div[data-testid="stExpander"] summary { font-size: 0.9rem; }
+  }
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
@@ -158,40 +185,48 @@ st.divider()
 # ---------------------------------------------------------------------------
 step_header(1, "데이터 업로드", "CSV, XLSX, XLS 파일을 지원합니다. 한글 인코딩(cp949/euc-kr)은 자동 인식합니다.")
 
-col_upload, col_sample = st.columns([3, 1])
+# 업로드 카드와 샘플 카드를 같은 톤의 테두리로 나란히 배치한다.
+# 화면이 좁아지면(휴대폰 등) Streamlit이 자동으로 위/아래로 쌓아 준다.
+col_upload, col_sample = st.columns([3, 2], gap="medium")
 
 with col_upload:
-    uploaded = st.file_uploader(
-        "파일을 끌어다 놓거나 클릭해서 선택하세요",
-        type=["csv", "txt", "tsv", "xlsx", "xls", "xlsm"],
-        label_visibility="collapsed",
-    )
-
-with col_sample:
-    sample_dir = Path(__file__).resolve().parent / "samples"
-    sample_meta = [
-        ("sample_quality_classification.csv", "🏭 제조 품질 판정 (분류)"),
-        ("sample_sales_regression.csv", "🏬 지점 매출 예측 (회귀)"),
-        ("sample_card_customer_churn.csv", "💳 카드사 고객 이탈 (분류)"),
-    ]
-    available_samples = [
-        (sample_dir / name, label) for name, label in sample_meta if (sample_dir / name).exists()
-    ]
-    if available_samples:
-        chosen_label = st.selectbox(
-            "샘플 데이터 선택",
-            [label for _, label in available_samples],
+    with st.container(border=True):
+        st.markdown('<div class="panel-title">📁 내 파일 업로드</div>', unsafe_allow_html=True)
+        uploaded = st.file_uploader(
+            "파일을 끌어다 놓거나 클릭해서 선택하세요",
+            type=["csv", "txt", "tsv", "xlsx", "xls", "xlsm"],
             label_visibility="collapsed",
         )
-        chosen_path = next(path for path, label in available_samples if label == chosen_label)
-        if st.button("샘플 데이터로 체험", use_container_width=True):
-            loaded = load_dataframe(chosen_path)
-            st.session_state.df = loaded.df
-            st.session_state.load_result = loaded
-            st.session_state.profile = profile_dataframe(loaded.df)
-            st.session_state.type_overrides = {}
-            reset_analysis()
-            st.rerun()
+
+with col_sample:
+    with st.container(border=True):
+        st.markdown('<div class="panel-title">⚡ 샘플로 빠르게 체험</div>', unsafe_allow_html=True)
+        sample_dir = Path(__file__).resolve().parent / "samples"
+        sample_meta = [
+            ("sample_quality_classification.csv", "🏭 제조 품질 판정 (분류)"),
+            ("sample_sales_regression.csv", "🏬 지점 매출 예측 (회귀)"),
+            ("sample_card_customer_churn.csv", "💳 카드사 고객 이탈 (분류)"),
+        ]
+        available_samples = [
+            (sample_dir / name, label) for name, label in sample_meta if (sample_dir / name).exists()
+        ]
+        if available_samples:
+            chosen_label = st.selectbox(
+                "샘플 데이터 선택",
+                [label for _, label in available_samples],
+                label_visibility="collapsed",
+            )
+            chosen_path = next(path for path, label in available_samples if label == chosen_label)
+            if st.button("샘플 데이터로 체험", use_container_width=True):
+                loaded = load_dataframe(chosen_path)
+                st.session_state.df = loaded.df
+                st.session_state.load_result = loaded
+                st.session_state.profile = profile_dataframe(loaded.df)
+                st.session_state.type_overrides = {}
+                reset_analysis()
+                st.rerun()
+        else:
+            st.caption("사용 가능한 샘플 데이터가 없습니다.")
 
 if uploaded is not None:
     try:
